@@ -91,3 +91,28 @@ The findings are based on the specific rules implemented in this educational ver
 ## Disclaimer
 
 This tool is intended for educational purposes and defensive security analysis. Only analyze configurations you are authorized to inspect.
+## Demo
+
+Run the scanner against the example configuration:
+
+```text
+Cloud Security Scanner
+Configuration: examples\cloud_config.json
+Findings detected: 3
+
+[1] CRITICAL - Public storage access
+    Rule: CLOUD001
+    Resource: company-backups
+
+[2] HIGH - Storage encryption disabled
+    Rule: CLOUD002
+    Resource: company-backups
+
+[3] HIGH - SSH accessible from anywhere
+    Rule: CLOUD003
+    Resource: web-server-rules
+```
+
+Each finding includes a remediation recommendation. The scanner can also export findings to a CSV report for further analysis.
+
+**Note:** The demonstration uses a fictional local configuration and does not inspect live cloud infrastructure.
