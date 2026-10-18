@@ -1,41 +1,63 @@
 ﻿# Cloud Security Misconfiguration Scanner
 
-A lightweight Python security auditing tool that detects common cloud configuration misconfigurations in JSON files.
+A Python-based defensive security tool that identifies selected cloud configuration risks in local JSON files and checks Amazon S3 bucket public-access protections through the AWS API.
 
-This project demonstrates fundamental defensive security concepts, configuration validation, automated testing, and security report generation.
+The project focuses on cloud security fundamentals, read-only inspection, automated testing, and actionable remediation guidance.
 
 ## Features
 
-- Detects publicly accessible cloud storage.
-- Identifies storage resources with encryption disabled.
-- Detects SSH access exposed to the entire internet.
-- Validates configuration file structures.
-- Generates CSV reports for security findings.
-- Includes automated unit tests.
-- Uses only the Python standard library.
+- Analyzes local JSON configurations for selected security misconfigurations.
+- Detects publicly exposed storage configurations in supported JSON input.
+- Identifies storage configurations with encryption disabled.
+- Detects SSH ingress rules open to the internet.
+- Inspects Amazon S3 bucket-level Block Public Access settings using Boto3.
+- Generates CSV reports for findings from the local configuration scanner.
+- Includes automated tests for detection rules, validation, reporting, and simulated AWS responses.
+- Performs read-only AWS API operations; it does not modify cloud resources.
 
 ## Security Checks
 
+### Local JSON scanner
+
 | Rule ID | Severity | Description |
 |---|---|---|
-| CLOUD001 | CRITICAL | Public storage access |
-| CLOUD002 | HIGH | Storage encryption disabled |
-| CLOUD003 | HIGH | SSH accessible from anywhere |
+| CLOUD001 | CRITICAL | Public storage access in the supplied configuration |
+| CLOUD002 | HIGH | Storage encryption disabled in the supplied configuration |
+| CLOUD003 | HIGH | SSH exposed to `0.0.0.0/0` |
+
+These checks analyze the supplied JSON data. They do not independently verify the live state of cloud resources.
+
+### AWS S3 scanner
+
+| Rule ID | Severity | Description |
+|---|---|---|
+| AWS-S3-001 | HIGH | S3 bucket-level Block Public Access settings are incomplete or not configured |
+
+The AWS scanner checks these four settings:
+
+- `BlockPublicAcls`
+- `IgnorePublicAcls`
+- `BlockPublicPolicy`
+- `RestrictPublicBuckets`
+
+A finding indicates that the bucket-level protections need review. It does not, by itself, prove that the bucket is publicly accessible.
 
 ## Project Structure
 
 ```text
-cloud-security-misconfiguration-scanner/
+cloud-security-scanner/
 ├── cloud_scanner/
 │   ├── __init__.py
 │   ├── scanner.py
-│   └── reporting.py
+│   ├── reporting.py
+│   └── aws_scanner.py
 ├── examples/
 │   └── cloud_config.json
 ├── tests/
 │   ├── __init__.py
 │   ├── test_scanner.py
-│   └── test_reporting.py
+│   ├── test_reporting.py
+│   └── test_aws_scanner.py
 ├── reports/
 ├── main.py
 ├── requirements.txt
@@ -46,73 +68,89 @@ cloud-security-misconfiguration-scanner/
 ## Requirements
 
 - Python 3.10 or newer recommended.
-- No third-party Python packages required.
+- Boto3, installed through `requirements.txt`, for AWS API access.
+- AWS credentials and appropriate read permissions are required only when running the live AWS scanner.
+
+## Installation
+
+Create and activate a virtual environment.
+
+On Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
 
 ## Usage
 
-Run the scanner with the example configuration:
+### Scan a local JSON configuration
+
+Run the existing configuration scanner:
 
 ```powershell
 python main.py
 ```
 
-Export the findings to a CSV report:
+Export its findings to CSV:
 
 ```powershell
 python main.py --csv reports/security_findings.csv
 ```
 
-The scanner displays detected security findings and their remediation recommendations.
+### Scan Amazon S3
+
+The AWS scanner module is currently available for programmatic use. Once AWS credentials have been configured through an approved AWS authentication method, it can be called from Python:
+
+```python
+from cloud_scanner.aws_scanner import scan_s3
+
+findings = scan_s3()
+
+for finding in findings:
+    print(finding)
+```
+
+This operation uses AWS API calls to list buckets and retrieve bucket-level public-access settings. It does not create, update, or delete AWS resources.
+
+The AWS module is separate from the existing `main.py` JSON workflow; the current CLI does not yet expose a dedicated AWS scanning command.
 
 ## Running the Tests
 
-Run the automated test suite:
+Run the complete test suite:
 
 ```powershell
-python -m unittest -v
+python -m unittest discover -s tests -v
 ```
 
-The tests cover security detection rules, configuration validation, and CSV report generation.
+The tests use simulated AWS client responses and do not require a live AWS account.
 
-## Example Findings
+## Current Limitations
 
-The example configuration demonstrates three security issues:
+- The local JSON scanner evaluates only the configuration data provided to it.
+- The AWS scanner checks bucket-level S3 Block Public Access settings only.
+- It does not yet inspect S3 bucket policies, object ACLs, account-level public-access settings, or bucket encryption.
+- It does not currently assess other AWS services or other cloud providers.
+- The AWS scanner and local JSON scanner have separate workflows.
+- A successful scan is not a guarantee that a cloud environment is secure.
+- AWS permission errors are reported as scan failures rather than being treated as evidence that a resource is secure or insecure.
 
-- **CRITICAL:** Public access enabled for a storage resource.
-- **HIGH:** Storage encryption disabled.
-- **HIGH:** SSH access allowed from any IPv4 address.
+## Roadmap
 
-## Limitations
-
-This project analyzes local JSON configuration files. It does not connect to AWS or other cloud providers, inspect live infrastructure, or make changes to cloud resources.
-
-The findings are based on the specific rules implemented in this educational version and do not represent a complete cloud security audit.
+- Add tests for additional AWS API response edge cases.
+- Integrate AWS scanning into a dedicated CLI command.
+- Inspect bucket policies and account-level public-access settings.
+- Add checks for S3 encryption and other relevant security controls.
+- Improve structured reporting and remediation guidance.
+- Expand supported AWS services after validating each security rule.
 
 ## Disclaimer
 
-This tool is intended for educational purposes and defensive security analysis. Only analyze configurations you are authorized to inspect.
-## Demo
+This project is intended for educational purposes and authorized defensive security analysis. Use it only on cloud accounts and configurations you are authorized to inspect. The scanner is not a substitute for a comprehensive security audit.
 
-Run the scanner against the example configuration:
+## Example: Local Configuration Scan
 
-```text
-Cloud Security Scanner
-Configuration: examples\cloud_config.json
-Findings detected: 3
+The local demonstration uses fictional JSON configuration data and may report public storage access, disabled encryption, and SSH exposed to the internet.
 
-[1] CRITICAL - Public storage access
-    Rule: CLOUD001
-    Resource: company-backups
-
-[2] HIGH - Storage encryption disabled
-    Rule: CLOUD002
-    Resource: company-backups
-
-[3] HIGH - SSH accessible from anywhere
-    Rule: CLOUD003
-    Resource: web-server-rules
-```
-
-Each finding includes a remediation recommendation. The scanner can also export findings to a CSV report for further analysis.
-
-**Note:** The demonstration uses a fictional local configuration and does not inspect live cloud infrastructure.
+These findings come from the supplied example configuration; they are not observations of live AWS resources.

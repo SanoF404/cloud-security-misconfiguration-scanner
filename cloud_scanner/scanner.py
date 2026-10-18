@@ -1,8 +1,13 @@
 ﻿"""Basic cloud security misconfiguration scanner."""
 
+from collections.abc import Callable
 
-def scan_config(config: dict) -> list[dict]:
-    """Validate and analyze cloud resources."""
+
+def scan_config(
+    config: dict,
+    progress_callback: Callable[[], None] | None = None,
+) -> list[dict]:
+    """Validate and analyze cloud resources, reporting progress if requested."""
     if not isinstance(config, dict):
         raise ValueError("Configuration must be a JSON object.")
 
@@ -11,6 +16,7 @@ def scan_config(config: dict) -> list[dict]:
     if not isinstance(resources, list):
         raise ValueError("'resources' must be a list.")
 
+    # Validate the configuration before scanning any resource.
     for index, resource in enumerate(resources):
         if not isinstance(resource, dict):
             raise ValueError(
@@ -101,5 +107,9 @@ def scan_config(config: dict) -> list[dict]:
                             "or a secure administrative network."
                         ),
                     })
+
+        # Notify the caller only after this resource has been analyzed.
+        if progress_callback is not None:
+            progress_callback()
 
     return findings

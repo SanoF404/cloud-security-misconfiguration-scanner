@@ -1,2 +1,2 @@
-﻿# No third-party dependencies required.
-# This project uses the Python standard library.
+﻿boto3>=1.43,<2
+rich>=13.7,<15

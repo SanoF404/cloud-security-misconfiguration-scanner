@@ -18,3 +18,6 @@ env/
 # Generated reports
 reports/*.csv
 reports/*.html
+
+# Local backup files
+*.backup
