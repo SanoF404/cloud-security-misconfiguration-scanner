@@ -1,0 +1,36 @@
+﻿{
+  "provider": "aws",
+  "resources": [
+    {
+      "id": "storage-001",
+      "type": "storage",
+      "name": "company-backups",
+      "public_access": true,
+      "encryption_enabled": false
+    },
+    {
+      "id": "network-001",
+      "type": "security_group",
+      "name": "web-server-rules",
+      "inbound_rules": [
+        {
+          "protocol": "tcp",
+          "port": 22,
+          "source": "0.0.0.0/0"
+        },
+        {
+          "protocol": "tcp",
+          "port": 443,
+          "source": "0.0.0.0/0"
+        }
+      ]
+    },
+    {
+      "id": "storage-002",
+      "type": "storage",
+      "name": "internal-documents",
+      "public_access": false,
+      "encryption_enabled": true
+    }
+  ]
+}
